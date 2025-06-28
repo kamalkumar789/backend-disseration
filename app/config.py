@@ -9,8 +9,12 @@ class Config:
     DB_USER = os.getenv("DB_USER", "myuser")
     DB_PASS = os.getenv("DB_PASS", "mypassword")
 
+    FRONTEND_ORIGIN = os.getenv("FRONTEND_ORIGIN", "http://localhost:5173")
+
     SQLALCHEMY_DATABASE_URI = (
         f"postgresql://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
     )
+    print("Connecting to DB:", SQLALCHEMY_DATABASE_URI)
+
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False
