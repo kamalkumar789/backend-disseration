@@ -5,7 +5,7 @@ class TrialPreferences(db.Model):
     __tablename__ = 'trial_preferences'
 
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), unique=True, nullable=False)
+    account_id = db.Column(db.Integer, db.ForeignKey('accounts.id'), unique=True, nullable=False)
     preferred_location = db.Column(db.String(100), nullable=False)
     availability = db.Column(db.Text)
     contact_by_researchers = db.Column(db.Boolean, nullable=False)
@@ -14,3 +14,5 @@ class TrialPreferences(db.Model):
     willing_surveys = db.Column(db.Boolean, nullable=False)
     willing_medication = db.Column(db.Boolean, nullable=False)
     willing_mri = db.Column(db.Boolean, nullable=False)
+
+    account = db.relationship('Accounts', back_populates='trial_preference')

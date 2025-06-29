@@ -1,77 +1,62 @@
 from flask import Blueprint, request, jsonify, session
 
-from app.models.users import Users
+from app.models.accounts import Accounts
 from app.models.participants_profile import ParticipantsProfile
 from app.models.medical_info import MedicalInfo
 from app.models.trial_preferences import TrialPreferences
 
 from app._init_ import db
+from app.services.auth_service import AuthService
+from app.services.organizations_service import OrganizationsService
+from app.services.participants_service import ParticipantsService
+from app.services.researchers_service import ResearchersService
 
 
 auth_bp = Blueprint('auth', __name__)
 
 @auth_bp.route('/register', methods=['POST'])
 def register():
-    data = request.json
+    data = request.get_json()
 
-    # Basic user info
-    username = data.get('username')
-    password = data.get('password')
-    consent = data.get('consent', False)
-    user_type = data.get('userType', None)
+    if not data or 'userType' not in data or 'data' not in data:
+        return jsonify({"error": "Invalid request payload"}), 400
 
-    profile_data = data.get('profile', {})
-    email = profile_data.get('email')
+    user_type = data['userType']
+    user_data = data['data']
 
-    if not username or not password:
-        return jsonify({'error': 'Username and password are required'}), 400
+    try:
+        account = AuthService.create_account({
+            'username': user_data['username'],
+            'consent': user_data['consent'],
+            'userType': user_type,
+            'password': user_data['password']
+        })
 
-    if ParticipantsProfile.query.filter_by(email=email).first():
-        return jsonify({'error': 'email already exists'}), 400
+        if user_type == 'participant':
+            ParticipantsService.create_participant_profile(account, user_data)
+            ParticipantsService.create_medical_info(account, user_data)
+            ParticipantsService.create_trial_preferences(account, user_data)
 
-    user = Users(username=username, consent=consent, user_type=user_type)
-    user.set_password(password)
+        elif user_type == 'researcher':
+            ResearchersService.create_researcher(account, user_data)
 
-    profile = ParticipantsProfile(
-        full_name=profile_data.get('fullName'),
-        postcode=profile_data.get('postcode'),
-        email=profile_data.get('email'),
-        phone=profile_data.get('phone'),
-        user=user
-    )
+        elif user_type == 'organization':
+            OrganizationsService.create_organization(account, user_data)
 
-    medical_data = data.get('medicalInfo', {})
-    medical_info = MedicalInfo(
-        receiving_treatment=medical_data.get('receivingTreatment', False),
-        mental_health_conditions=medical_data.get('mentalHealthConditions'),
-        current_medications=medical_data.get('currentMedications'),
-        physical_conditions=medical_data.get('physicalConditions'),
-        participated_before=medical_data.get('participatedBefore', False),
-        user=user
-    )
+        db.session.commit()
 
-    trial_data = data.get('trialPreferences', {})
-    trial_preferences = TrialPreferences(
-        preferred_location=trial_data.get('preferredLocation'),
-        availability=trial_data.get('availability'),
-        contact_by_researchers=trial_data.get('contactByResearchers', False),
-        trial_length_preference=trial_data.get('trialLengthPreference'),
-        willing_interviews=trial_data.get('willingInterviews', False),
-        willing_surveys=trial_data.get('willingSurveys', False),
-        willing_medication=trial_data.get('willingMedication', False),
-        willing_mri=trial_data.get('willingMRI', False),
-        user=user
-    )
+        session['account_id'] = account.id
 
-    db.session.add(user)
-    db.session.add(profile)
-    db.session.add(medical_info)
-    db.session.add(trial_preferences)
-    db.session.commit()
+        return jsonify({
+            "message": "Registration successful",
+            "accountId": account.id,
+            "username": account.username,
+            "userType": account.user_type
+        }), 201
 
-    session['user_id'] = user.id
-
-    return jsonify({'message': 'User registered successfully'})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
 
 
 @auth_bp.route('/login', methods=['POST'])
@@ -81,30 +66,30 @@ def login():
     password = data.get('password')
 
     if not email or not password:
-        return jsonify({'error': 'Username and password required'}), 400
+        return jsonify({'error': 'email and password required'}), 400
 
-    user = Users.query.filter_by(email=email).first()
-    if not user:
+    acc = Accounts.query.filter_by(email=email).first()
+    if not acc:
         return jsonify({'error': 'This user is not registered'}), 400
 
-    if not user.check_password(password):
+    if not Accounts.verify_password(password):
         return jsonify({'error': 'Invalid password'}), 401
 
-    session['user_id'] = user.id
+    session['account_id'] = Accounts.id
 
     return jsonify({'message': 'User logged in successfully'})
 
 
 @auth_bp.route('/whoami', methods=['POST'])
 def whoami():
-    user_id = session.get('user_id')
+    account_id = session.get('account_id')
 
-    if not user_id:
+    if not account_id:
         return jsonify({'error': 'Session not active'}), 400
 
-    session['user_id'] = user_id
+    session['account_id'] = account_id
 
-    return jsonify({'message': 'User logged in successfully', 'user_id': user_id})
+    return jsonify({'message': 'User logged in successfully', 'account_id': account_id})
 
 
 @auth_bp.route('/logout', methods=['POST'])
