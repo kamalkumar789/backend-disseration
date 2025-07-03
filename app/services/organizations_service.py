@@ -1,18 +1,26 @@
-from app._init_ import db
+from typing import List
+from app import db
 from app.models.organizations import Organizations
+from app.models.researchers import Researchers
+from app.models.users import Users
 
 class OrganizationsService:
     @staticmethod
-    def create_organization(account, data):
-        primary_contact = data.get('primaryContact', {})
+    def create_organization(user, data):
+       
         org = Organizations(
-            account_id=account.id,
+            user_id=user.id,
             organization_name=data['organizationName'],
-            legal_entity_type=data['legalEntityType'],
             registered_address=data['registeredAddress'],
             official_email=data['officialEmail'],
-            contact_full_name=primary_contact.get('fullName'),
-            contact_designation=primary_contact.get('designation'),
-            contact_phone=primary_contact.get('phone')
+            contact_full_name=data.get('contactPersonName'),
+            contact_designation=data.get('contactPersonDesignation'),
+            contact_phone=data.get('contactPersonPhone')
         )
         db.session.add(org)
+        db.session.flush()
+
+        return org
+    
+    
+    

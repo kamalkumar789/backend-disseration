@@ -1,16 +1,19 @@
-from app._init_ import db
+from app import db
 from werkzeug.security import generate_password_hash
-from app.models.accounts import Accounts
+from app.models.users import Users
 
 class AuthService:
     @staticmethod
-    def create_account(data):
-        account = Accounts(
-            username=data['username'],
-            consent=data['consent'],
-            user_type=data['userType']
+    def create_user(user_type, data, status):
+
+        userData = data['userDetails']
+        user = Users(
+            username=userData['username'],
+            consent=userData['consent'],
+            user_type=user_type,
+            status=status
         )
-        account.set_password(data['password'])
-        db.session.add(account)
+        user.set_password(userData['password'])
+        db.session.add(user)
         db.session.flush() 
-        return account
+        return user
