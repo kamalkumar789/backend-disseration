@@ -9,12 +9,18 @@ class Config:
     DB_USER = os.getenv("DB_USER", "myuser")
     DB_PASS = os.getenv("DB_PASS", "mypassword")
 
-    FRONTEND_ORIGIN = os.getenv("FRONTEND_ORIGIN", "http://localhost:5173")
-
-    SQLALCHEMY_DATABASE_URI = (
-        f"postgresql://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
-    )
-    print("Connecting to DB:", SQLALCHEMY_DATABASE_URI)
-
-
+    SQLALCHEMY_DATABASE_URI = f"postgresql://{DB_USER}:{DB_PASS}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+
+    # Mail Config
+    MAIL_SERVER = 'smtp.gmail.com'
+    MAIL_PORT = 587
+    MAIL_USE_TLS = True
+    MAIL_USERNAME = os.getenv("MAIL_USERNAME", "your_email@gmail.com")
+    MAIL_PASSWORD = os.getenv("MAIL_PASSWORD", "your_app_password_here")
+
+    MAIL_DEFAULT_SENDER = os.getenv('MAIL_DEFAULT_SENDER')  # read from env
+
+
+    # Frontend
+    FRONTEND_ORIGIN = os.getenv("FRONTEND_ORIGIN", "http://localhost:5173")
