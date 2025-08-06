@@ -8,3 +8,7 @@ from .trial_consent_Information import TrialConsentInformation
 from .trial_researchers import TrialResearchers
 from .trial_participants import TrialParticipants
 from .clinical_trials import ClinicalTrials
+from .country import Country
+from .city import City
+from .county import County
+from .clinical_trial_location import ClinicalTrialLocation

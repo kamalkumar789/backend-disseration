@@ -1,4 +1,4 @@
-from app._init_ import db
+from app import db
 
 class Researchers(db.Model):
     __tablename__ = "researchers"
@@ -10,12 +10,13 @@ class Researchers(db.Model):
     email = db.Column(db.String, nullable=False)
     phone = db.Column(db.String, nullable=False)
 
-    department = db.Column(db.String, nullable=True)
-    role = db.Column(db.String, nullable=True)
     research_focus = db.Column(db.String, nullable=True)
 
-    account_id = db.Column(db.Integer, db.ForeignKey('accounts.id'), unique=True, nullable=False)
-    organization_id = db.Column(db.Integer, db.ForeignKey("organizations.id"), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), unique=True, nullable=False)
+    organization_id = db.Column(db.Integer, db.ForeignKey('organizations.id'), nullable=False)
 
-    account = db.relationship('Accounts', back_populates='researchers')
+    user = db.relationship('Users', back_populates='researchers')
     organization = db.relationship("Organizations", back_populates="researchers")
+
+    clinical_trials_created = db.relationship("ClinicalTrials", back_populates="created_by_researcher")
+    trial_researchers = db.relationship("TrialResearchers", back_populates="researcher")
