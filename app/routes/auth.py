@@ -1,15 +1,15 @@
 from flask import Blueprint, request, jsonify, session
 
-from app.models.accounts import Accounts
-from app.models.participants_profile import ParticipantsProfile
-from app.models.medical_info import MedicalInfo
-from app.models.trial_preferences import TrialPreferences
-
-from app._init_ import db
 from app.services.auth_service import AuthService
 from app.services.organizations_service import OrganizationsService
 from app.services.participants_service import ParticipantsService
 from app.services.researchers_service import ResearchersService
+from app.models.participants import Participants
+from app.models.researchers import Researchers
+from app.models.organizations import Organizations
+from app.models.users import Users
+
+from app import db
 
 
 auth_bp = Blueprint('auth', __name__)
@@ -25,33 +25,50 @@ def register():
     user_data = data['data']
 
     try:
-        account = AuthService.create_account({
-            'username': user_data['username'],
-            'consent': user_data['consent'],
-            'userType': user_type,
-            'password': user_data['password']
-        })
+        status = "active"
+        
+        if(user_type == "researcher"):
+            status = "not-verified"
+
+        user = AuthService.create_user(user_type, user_data, status)
+
+        email = ""
+        
+        profileId = None
 
         if user_type == 'participant':
-            ParticipantsService.create_participant_profile(account, user_data)
-            ParticipantsService.create_medical_info(account, user_data)
-            ParticipantsService.create_trial_preferences(account, user_data)
+            email = user_data["profile"].get("email")
+            participant = ParticipantsService.create_participant_profile(user, user_data)
+            profileId = participant.id
+            ParticipantsService.create_medical_info(profileId, user_data)
+            ParticipantsService.create_trial_preferences(profileId, user_data)
 
         elif user_type == 'researcher':
-            ResearchersService.create_researcher(account, user_data)
+            researcher = ResearchersService.create_researcher(user, user_data)
+            profileId = researcher.id
+
 
         elif user_type == 'organization':
-            OrganizationsService.create_organization(account, user_data)
-
+            organization = OrganizationsService.create_organization(user, user_data)
+            profileId = organization.id
+            
         db.session.commit()
 
-        session['account_id'] = account.id
+        session['user_id'] = user.id
+        session['profile_id'] = profileId
+
+
+        if user_type == 'researcher':
+            return jsonify({'error': 'You will be send email once its verified, and then can be used'}), 401
 
         return jsonify({
             "message": "Registration successful",
-            "accountId": account.id,
-            "username": account.username,
-            "userType": account.user_type
+            "userId": user.id,
+            "username": user.username,
+            "userType": user.user_type,
+            "email": email,
+            "profileId": profileId
+
         }), 201
 
     except Exception as e:
@@ -62,37 +79,72 @@ def register():
 @auth_bp.route('/login', methods=['POST'])
 def login():
     data = request.json
-    email = data.get('email')
+    username = data.get('username')
     password = data.get('password')
+    userType = data.get('userType')
 
-    if not email or not password:
-        return jsonify({'error': 'email and password required'}), 400
+    if not username or not password:
+        return jsonify({'error': 'Username and password required'}), 400
 
-    acc = Accounts.query.filter_by(email=email).first()
-    if not acc:
-        return jsonify({'error': 'This user is not registered'}), 400
+    user = Users.query.filter_by(username=username, user_type=userType).first()
 
-    if not Accounts.verify_password(password):
+    if not user:
+        return jsonify({'error': 'This user is not registered'}), 401
+
+    if not user.verify_password(password):
         return jsonify({'error': 'Invalid password'}), 401
+    
+    if user.status == "not-verified":
+        return jsonify({'error': 'This account is not verified. You will be send email once its verified'}), 401
+    
+    if user.status == "reject":
+        return jsonify({'error': 'This account was rejected'}), 401
 
-    session['account_id'] = Accounts.id
 
-    return jsonify({'message': 'User logged in successfully'})
+    profile_id = None
+    email = None
 
+    if user.user_type == 'participant':
+        participant_profile = Participants.query.filter_by(user_id=user.id).first()
+        profile_id = participant_profile.id if participant_profile else None
+        email = participant_profile.email if participant_profile else None
+
+    elif user.user_type == 'researcher':
+        researcher = Researchers.query.filter_by(user_id=user.id).first()
+        profile_id = researcher.id if researcher else None
+        email = researcher.email if researcher else None
+
+    elif user.user_type == 'organization':
+        organization = Organizations.query.filter_by(user_id=user.id).first()
+        profile_id = organization.id if organization else None
+        email = organization.official_email if organization else None
+
+    session['user_id'] = user.id
+    session['profile_id'] = profile_id
+    
+    return jsonify({
+        "message": "login successful",
+        "userId": user.id,
+        "username": user.username,
+        "userType": user.user_type,
+        "email": email,
+        "profileId": profile_id,
+        "status": user.status
+    }), 201
 
 @auth_bp.route('/whoami', methods=['POST'])
 def whoami():
-    account_id = session.get('account_id')
+    user_id = session.get('user_id')
 
-    if not account_id:
-        return jsonify({'error': 'Session not active'}), 400
+    if not user_id:
+        return jsonify({'error': 'Session not active'}), 401
 
-    session['account_id'] = account_id
+    session['user_id'] = user_id
 
-    return jsonify({'message': 'User logged in successfully', 'account_id': account_id})
+    return jsonify({'message': 'User logged in successfully', 'user_id': user_id})
 
 
-@auth_bp.route('/logout', methods=['POST'])
+@auth_bp.route('/logout', methods=['GET'])
 def logout():
     session.clear() 
     return jsonify({'message': 'Logged out successfully'}), 200
