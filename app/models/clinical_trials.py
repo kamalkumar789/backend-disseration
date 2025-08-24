@@ -11,12 +11,8 @@ class ClinicalTrials(db.Model):
     overview = db.Column(db.Text, nullable=False)
     participation_criteria = db.Column(db.Text, nullable=False)
     visit_details = db.Column(db.String, nullable=False)
-
-    # Location info (New Fields)
-    address = db.Column(db.String(255), nullable=True)  # Optional street address
-    city_id = db.Column(db.Integer, db.ForeignKey('cities.id'), nullable=True)
-    county_id = db.Column(db.Integer, db.ForeignKey('counties.id'), nullable=True)
-    country_id = db.Column(db.Integer, db.ForeignKey('countries.id'), nullable=True)
+    total_duration= db.Column(db.String)
+    total_visits = db.Column(db.Integer, nullable=True, default=0)
 
     # Optional FK to a separate location table (if needed)
     clinical_trial_location_id = db.Column(
@@ -33,7 +29,3 @@ class ClinicalTrials(db.Model):
     trial_consent_information = db.relationship("TrialConsentInformation", back_populates="clinical_trial", uselist=False)
     trial_participants = db.relationship("TrialParticipants", back_populates="clinical_trial")
     trial_researchers = db.relationship("TrialResearchers", back_populates="clinical_trial")
-
-    city = db.relationship("City")
-    county = db.relationship("County")
-    country = db.relationship("Country")

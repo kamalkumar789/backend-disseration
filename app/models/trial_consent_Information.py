@@ -14,5 +14,5 @@ class TrialConsentInformation(db.Model):
     safety_contacts = db.Column(db.Text)
     ethics = db.Column(db.Text)
     consent_understanding = db.Column(db.Text)
-
+    total_compensation = db.Column(db.Integer)
     clinical_trial = db.relationship("ClinicalTrials", back_populates="trial_consent_information")

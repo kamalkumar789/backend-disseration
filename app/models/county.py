@@ -8,7 +8,6 @@ class County(db.Model):
     name = db.Column(db.String(100), nullable=False)
     country_id = db.Column(db.Integer, db.ForeignKey('countries.id'), nullable=False)
     cities = db.relationship('City', backref='county', lazy=True)
-    clinical_trials = db.relationship('ClinicalTrials', backref='county', lazy=True)
 
     def __repr__(self):
         return f"<County {self.name}>"
