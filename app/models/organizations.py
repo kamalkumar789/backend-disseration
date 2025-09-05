@@ -1,4 +1,5 @@
 from app import db
+from datetime import datetime
 
 class Organizations(db.Model):
     __tablename__ = "organizations"
@@ -23,3 +24,6 @@ class Organizations(db.Model):
     researchers = db.relationship("Researchers", back_populates="organization")
 
     clinical_trials = db.relationship('ClinicalTrials', back_populates='organization')
+
+    created_at = db.Column(db.DateTime, default=datetime.now(), nullable=False)
+    updated_at = db.Column(db.DateTime, default=datetime.now(), nullable=False, onupdate=datetime.now())

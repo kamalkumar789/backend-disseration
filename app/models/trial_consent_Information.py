@@ -1,5 +1,6 @@
 
 from app import db
+from datetime import datetime
 
 
 class TrialConsentInformation(db.Model):
@@ -16,3 +17,5 @@ class TrialConsentInformation(db.Model):
     consent_understanding = db.Column(db.Text)
     total_compensation = db.Column(db.Integer)
     clinical_trial = db.relationship("ClinicalTrials", back_populates="trial_consent_information")
+    created_at = db.Column(db.DateTime, default=datetime.now(), nullable=False)
+    updated_at = db.Column(db.DateTime, default=datetime.now(), nullable=False, onupdate=datetime.now())

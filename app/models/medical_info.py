@@ -1,4 +1,5 @@
 from app import db
+from datetime import datetime
 
 class MedicalInfo(db.Model):
     __tablename__ = 'medical_info'
@@ -14,3 +15,5 @@ class MedicalInfo(db.Model):
 
     participant = db.relationship("Participants", back_populates="medical_info")
     
+    created_at = db.Column(db.DateTime, default=datetime.now(), nullable=False)
+    updated_at = db.Column(db.DateTime, default=datetime.now(), nullable=False, onupdate=datetime.now())
