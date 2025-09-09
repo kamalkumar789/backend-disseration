@@ -35,10 +35,16 @@ def create_app():
     from app.routes.organizations import organization_bp
     from app.routes.clinical_trials import clinicaltrials_bp
     from app.routes.researchers import researchers_bp
+    from app.routes.location import location_bp
+    from app.routes.participants import participants_bp
+    from app.routes.meetings import meetings_bp
 
     flask_app.register_blueprint(auth_bp, url_prefix='/auth')
     flask_app.register_blueprint(organization_bp, url_prefix='/api')
     flask_app.register_blueprint(clinicaltrials_bp, url_prefix='/api')
     flask_app.register_blueprint(researchers_bp, url_prefix='/api')
+    flask_app.register_blueprint(location_bp, url_prefix="/api")
+    flask_app.register_blueprint(participants_bp, url_prefix="/api")
+    flask_app.register_blueprint(meetings_bp, url_prefix="/api")
 
     return flask_app

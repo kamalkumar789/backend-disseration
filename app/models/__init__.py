@@ -12,3 +12,4 @@ from .country import Country
 from .city import City
 from .county import County
 from .clinical_trial_location import ClinicalTrialLocation
+from .meetings import Meetings
