@@ -5,3 +5,4 @@ python-dotenv
 Werkzeug
 psycopg2-binary
 flask-cors
+Flask-Mail

@@ -37,18 +37,20 @@ def register():
         profileId = None
 
         if user_type == 'participant':
-            email = user_data["profile"].get("email")
+            email = user_data["profile"].get("officialEmail")
             participant = ParticipantsService.create_participant_profile(user, user_data)
             profileId = participant.id
             ParticipantsService.create_medical_info(profileId, user_data)
             ParticipantsService.create_trial_preferences(profileId, user_data)
 
         elif user_type == 'researcher':
+            # email = user_data["profile"].get("officialEmail")
             researcher = ResearchersService.create_researcher(user, user_data)
             profileId = researcher.id
 
 
         elif user_type == 'organization':
+            email = user_data.get("officialEmail")
             organization = OrganizationsService.create_organization(user, user_data)
             profileId = organization.id
             
@@ -59,7 +61,9 @@ def register():
 
 
         if user_type == 'researcher':
-            return jsonify({'error': 'You will be send email once its verified, and then can be used'}), 401
+            return jsonify({
+                "message": "Registration successful, but your account requires verification. You will receive an email once it’s verified.",
+            }), 201
 
         return jsonify({
             "message": "Registration successful",
@@ -119,6 +123,8 @@ def login():
         profile_id = organization.id if organization else None
         email = organization.official_email if organization else None
 
+    
+
     session['user_id'] = user.id
     session['profile_id'] = profile_id
     
@@ -130,7 +136,7 @@ def login():
         "email": email,
         "profileId": profile_id,
         "status": user.status
-    }), 201
+    }), 200
 
 @auth_bp.route('/whoami', methods=['POST'])
 def whoami():

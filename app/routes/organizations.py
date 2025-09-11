@@ -85,49 +85,25 @@ def approveResearchers():
     
 
 @organization_bp.route('/organization/details', methods=['GET'])
-def get_organization_details():
+def get_organization_dashboard_details():
     try:
-        user_id = session.get('user_id')
         profile_id = session.get('profile_id')
-
-        if not user_id or not profile_id:
+        if not profile_id:
             return jsonify({'error': 'Session not active or missing identifiers'}), 401
-        
-        # Fetch user details from users table
-        user = Users.query.filter_by(id=user_id).first()
-        if not user:
-            return jsonify({'error': 'User not found'}), 404
-        
-        # Fetch organization details using profile_id
-        organization = OrganizationsService.getOrganizationDetails(organizationId=profile_id)
-        if not organization:
-            return jsonify({'error': 'Organization not found'}), 404
-        
-        # Prepare combined response data
-        response_data = {
-            'userId': user.id,
-            'profileId': profile_id,
-            'username': user.username,
-            'consent': user.consent,  # assuming this field exists in Users
-            
-            'organizationName': organization.organization_name,
-            'yearOfEstablishment': organization.year_of_establishment,  # assuming this field exists
-            'registeredAddress': organization.registered_address,
-            'officialEmail': organization.official_email,
-            'contactPersonName': organization.contact_full_name,
-            'contactPersonDesignation': organization.contact_designation,
-            'contactPersonPhone': organization.contact_phone,
-            
-        }
 
-        return jsonify(response_data), 200
+        # Fetch full organization details
+        dashboard_data = OrganizationsService.getOrganizationDetails(profile_id)
+        if not dashboard_data:
+            return jsonify({'error': 'Organization not found'}), 404
+
+        return jsonify(dashboard_data), 200
 
     except Exception as e:
         return jsonify({'error': 'An unexpected error occurred', 'details': str(e)}), 500
+    
 
 
-
-@organization_bp.route('/organizations/dashboard/details', methods=['GET'])  # Change to POST
+@organization_bp.route('/organizations/dashboard/details', methods=['GET']) 
 def getAllOrganizationParticipants():
 
     try:
@@ -139,3 +115,12 @@ def getAllOrganizationParticipants():
         return jsonify({'error': 'An unexpected error occurred', 'details': str(e)}), 500
 
 
+
+@organization_bp.route('/<int:organization_id>/trials', methods=['GET'])
+def get_trials_by_organization(organization_id):
+    """
+    GET /api/organizations/<organization_id>/trials
+    Fetch all clinical trials for a given organization
+    """
+    trials = OrganizationsService.getTrialsByOrganizationId(organization_id)
+    return jsonify(trials), 200

@@ -5,7 +5,7 @@ def send_email(email: str, status: str) -> bool:
     try:
         message = "Sorry you have been rejected by Organization to use Account. "
 
-        if status == 'approve':
+        if status == 'approved':
             message = "Congratulations you have been approved to use account. Thanks for joining PRIME. "
         msg = Message(
             subject='PRIME Researcher Account Status',

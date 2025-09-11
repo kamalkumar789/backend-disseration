@@ -32,3 +32,31 @@ def getAllNotApprovedResearchersByOrganization():
 
     except Exception as e:
         return jsonify({'error': 'An unexpected error occurred', 'details': str(e)}), 500
+
+
+@researchers_bp.route('/researchers/<int:researcher_id>', methods=['GET'])
+def get_researcher_by_id(researcher_id):
+    try:
+        researcher = ResearchersService.get_researcher_by_id(researcher_id)
+        if not researcher:
+            return jsonify({'error': 'Researcher not found'}), 404
+        
+        return jsonify({'researcher': researcher}), 200
+
+    except Exception as e:
+        return jsonify({'error': 'An unexpected error occurred', 'details': str(e)}), 500
+    
+
+@researchers_bp.route("/researcher/update-field", methods=["PATCH"])
+def update_researcher_field():
+    data = request.json
+    researcher_id = session.get('profile_id')
+
+
+    try:
+        result = ResearchersService.update_researcher_field(researcher_id, data)
+        return jsonify(result), 200
+    except ValueError as ve:
+        return jsonify({"error": str(ve)}), 400
+    except Exception as e:
+        return jsonify({"error": "Internal Server Error"}), 500
