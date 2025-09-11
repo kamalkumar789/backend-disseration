@@ -124,3 +124,28 @@ def get_trials_by_organization(organization_id):
     """
     trials = OrganizationsService.getTrialsByOrganizationId(organization_id)
     return jsonify(trials), 200
+
+
+
+@organization_bp.route('/organization/update-field', methods=['PATCH'])
+def update_profile_details():
+    try:
+        user_id = session.get('user_id')
+        organization_id = session.get('profile_id')
+        data = request.json
+
+        if not user_id or not organization_id:
+            return jsonify({'error': 'user_id and organization_id are required in session'}), 400
+
+        organization_details = OrganizationsService.update_organization_details(user_id, organization_id, data)
+
+        if not organization_details:
+            return jsonify({'message': 'No organization found'}), 404
+
+        return jsonify(organization_details), 200
+
+    except Exception as e:
+        return jsonify({
+            'error': 'An unexpected error occurred',
+            'details': str(e)
+        }), 500
