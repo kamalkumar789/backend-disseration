@@ -730,8 +730,11 @@ class ClinicalTrialService:
 
     @staticmethod
     def getClinicalTrialsById(clinical_id, participant_id):
-        trial = ClinicalTrials.query.get(clinical_id)  # direct PK lookup
-
+        trial = ClinicalTrials.query.filter(
+            ClinicalTrials.id == clinical_id,
+            ClinicalTrials.status != "deleted"
+        ).first()
+        
         if not trial:
             return None  # or raise Exception / return {}
 
@@ -750,7 +753,7 @@ class ClinicalTrialService:
                 participant_id=participant_id, clinical_trial_id=clinical_id
             ).first() is not None
         
-        trial_data = {ClinicalTrials.status != "deleted"
+        trial_data = {
             "id": trial.id,
             "title": trial.title,
             "overview": trial.overview,
