@@ -1,6 +1,7 @@
 from app import db
 from app.models.organizations import Organizations
 from app.services.researchers_service import ResearchersService
+from sqlalchemy.exc import SQLAlchemyError
 from collections import defaultdict
 
 class OrganizationsService:
@@ -100,14 +101,10 @@ class OrganizationsService:
         """
         organization = Organizations.query.filter_by(id=organizationId).first()
         if not organization:
-            return None  # Or raise an exception
+            return None 
 
-        # Calculate total participants across all clinical trials
-        total_participants = sum(len(trial.trial_participants) for trial in organization.clinical_trials)
 
-        # Get all researchers linked to this organization
-        researchers = ResearchersService.getAllResearchers(organization_id=organizationId)
-        total_researchers = len(researchers)
+        user = organization.user
 
         return {
             'id': organization.id,
@@ -118,8 +115,8 @@ class OrganizationsService:
             'contact_person_name': organization.contact_full_name,
             'contact_person_designation': organization.contact_designation,
             'contact_person_phone': organization.contact_phone,
-            'total_participants': total_participants,
-            'total_researchers': total_researchers
+            'status': user.status,
+            'username': user.username
         }
         
 
@@ -193,3 +190,51 @@ class OrganizationsService:
             })
 
         return trials_data
+
+    @staticmethod
+    def update_organization_details(user_id, organization_id, data):
+        """
+        Update organization details.
+        `data` should be a dict like:
+        {
+            "section": "organization" | "user",
+            "field": "organization_name",
+            "value": "New Org Name"
+        }
+        """
+        try:
+            organization = Organizations.query.filter_by(
+                id=organization_id, user_id=user_id
+            ).first()
+
+            if not organization:
+                raise ValueError("Organization not found")
+
+            section = data.get("section")
+            field = data.get("field")
+            value = data.get("value")
+
+            if section == "organization":
+                if not hasattr(organization, field):
+                    raise ValueError(f"Invalid field '{field}' for organization")
+                setattr(organization, field, value)
+
+            elif section == "user":
+                user = organization.user
+                if not hasattr(user, field):
+                    raise ValueError(f"Invalid field '{field}' for user")
+                if field == "password":  # use hashing
+                    user.set_password(value)
+                else:
+                    setattr(user, field, value)
+
+            else:
+                raise ValueError(f"Invalid section '{section}'")
+
+            db.session.commit()
+            return {"message": f"{section}.{field} updated successfully", "value": value}
+
+        except SQLAlchemyError as e:
+            db.session.rollback()
+            print(f"[ERROR] Failed to update organization details: {e}")
+            raise
